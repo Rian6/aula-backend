@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Sistema de Pedidos</title>
+
+<style>
+    * { box-sizing: border-box; }
+
+    body {
+        font-family: 'Segoe UI', Arial, sans-serif;
+        background: linear-gradient(135deg, #f5f7fa, #e4e7eb);
+        margin: 0;
+    }
+
+    header {
+        background: linear-gradient(135deg, #A9007A, #7a0056);
+        color: white;
+        padding: 25px;
+        text-align: center;
+        font-size: 22px;
+        font-weight: bold;
+        letter-spacing: 1px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+    }
+
+    .container {
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 25px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+        margin-bottom: 10px;
+        color: #333;
+    }
+
+    .input-group {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+
+    input {
+        flex: 1;
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+        font-size: 14px;
+        transition: 0.2s;
+    }
+
+    input:focus {
+        border-color: #A9007A;
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(169, 0, 122, 0.1);
+    }
+
+    button {
+        padding: 12px 16px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: 0.2s;
+    }
+
+    .btn-add { background: #28a745; color: white; }
+    .btn-add:hover { background: #218838; }
+
+    .btn-edit { background: #ffc107; }
+    .btn-edit:hover { background: #e0a800; }
+
+    .btn-delete { background: #dc3545; color: white; }
+    .btn-delete:hover { background: #c82333; }
+
+    .pedido {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px;
+        margin-bottom: 10px;
+        border-radius: 8px;
+        background: #f8f9fa;
+        transition: 0.2s;
+    }
+
+    .pedido:hover {
+        background: #eef1f4;
+        transform: scale(1.01);
+    }
+
+    .pedido span {
+        font-size: 15px;
+        color: #333;
+    }
+
+    .actions button {
+        margin-left: 5px;
+    }
+
+    .empty {
+        text-align: center;
+        color: #888;
+        padding: 20px;
+    }
+
+    .loading {
+        text-align: center;
+        color: #555;
+        padding: 20px;
+    }
+</style>
+</head>
+
+<body>
+
+<header>
+    📦 Sistema de Pedidos
+</header>
+
+<div class="container">
+
+    <h2>Criar Pedido</h2>
+    <div class="input-group">
+        <input type="text" id="descricao" placeholder="Digite o pedido..." onkeypress="enterHandler(event)">
+        <button class="btn-add" onclick="criarPedido()">Adicionar</button>
+    </div>
+
+    <h2>Lista de Pedidos</h2>
+    <div id="lista"></div>
+
+</div>
+
+<script>
+const API = "http://localhost:8080";
+
+function enterHandler(event) {
+    if (event.key === "Enter") criarPedido();
+}
+
+// =========================
+// LISTAR (JSON)
+// =========================
+async function listarPedidos() {
+    const lista = document.getElementById("lista");
+    lista.innerHTML = "<div class='loading'>Carregando...</div>";
+
+    try {
+        const res = await fetch(API + "/pedidos");
+        const pedidos = await res.json();
+
+        lista.innerHTML = "";
+
+        if (!pedidos || pedidos.length === 0) {
+            lista.innerHTML = "<div class='empty'>Nenhum pedido encontrado</div>";
+            return;
+        }
+
+        pedidos.forEach(p => {
+            const div = document.createElement("div");
+            div.className = "pedido";
+
+            div.innerHTML = `
+                <span><b>#${p.id}</b> - ${p.descricao}</span>
+                <div class="actions">
+                    <button class="btn-edit" onclick="editarPedido(${p.id}, '${p.descricao}')">Editar</button>
+                    <button class="btn-delete" onclick="deletarPedido(${p.id})">Excluir</button>
+                </div>
+            `;
+
+            lista.appendChild(div);
+        });
+
+    } catch (e) {
+        lista.innerHTML = "<div class='empty'>Erro ao carregar pedidos</div>";
+        console.error(e);
+    }
+}
+
+// =========================
+// CRIAR (JSON)
+// =========================
+async function criarPedido() {
+    const input = document.getElementById("descricao");
+    const descricao = input.value.trim();
+
+    if (!descricao) {
+        alert("Digite um pedido!");
+        return;
+    }
+
+    await fetch(API + "/pedidos", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ descricao })
+    });
+
+    input.value = "";
+    listarPedidos();
+}
+
+// =========================
+// DELETE
+// =========================
+async function deletarPedido(id) {
+    if (!confirm("Deseja realmente excluir este pedido?")) return;
+
+    await fetch(API + `/pedidos?id=${id}`, {
+        method: "DELETE"
+    });
+
+    listarPedidos();
+}
+
+// =========================
+// EDITAR (JSON)
+// =========================
+async function editarPedido(id, descricaoAtual) {
+    const novo = prompt("Editar pedido:", descricaoAtual);
+    if (!novo) return;
+
+    await fetch(API + `/pedidos?id=${id}`, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ descricao: novo })
+    });
+
+    listarPedidos();
+}
+
+// INIT
+listarPedidos();
+</script>
+
+</body>
+</html>
