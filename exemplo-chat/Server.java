@@ -35,7 +35,6 @@ public class Server {
         @Override
         public void run() {
             try {
-                // primeira mensagem = nome do usuário
                 nome = in.readLine();
                 broadcast("🔵 " + nome + " entrou no chat");
 

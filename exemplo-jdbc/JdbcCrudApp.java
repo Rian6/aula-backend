@@ -41,10 +41,9 @@ public class JdbcCrudApp {
         }
     }
 
-    // 🔥 CORREÇÃO AQUI
     private static Connection conectar() throws SQLException {
         try {
-            Class.forName("org.sqlite.JDBC"); // força carregar driver
+            Class.forName("org.sqlite.JDBC");
         } catch (ClassNotFoundException e) {
             throw new RuntimeException("Driver SQLite não encontrado!", e);
         }
@@ -170,7 +169,7 @@ public class JdbcCrudApp {
             System.out.print("ID: ");
             long id = Long.parseLong(scanner.nextLine());
 
-            stmt.setLong(1, id); // 🔥 isso faltava no seu código original
+            stmt.setLong(1, id);
 
             int linhas = stmt.executeUpdate();
 
